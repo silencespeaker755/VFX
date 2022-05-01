@@ -42,9 +42,50 @@ def cylindrical_warping(image, focal_len):
         .astype(np.float32)
     )
 
-    return cv2.remap(
-        image,
-        image_coordinate[:, :, 0],
-        image_coordinate[:, :, 1],
-        interpolation=cv2.INTER_LINEAR,
+    return np.array(
+        cv2.remap(
+            image,
+            image_coordinate[:, :, 0],
+            image_coordinate[:, :, 1],
+            interpolation=cv2.INTER_LINEAR,
+        ),
+        dtype=np.float32,
     )
+
+
+def bundle_adjustment(panorama):
+    # get shape of panorama image
+    h, w = panorama.shape[:2]
+
+    # get non-black area map of panorama image
+    panorama_map = np.sign(np.sum(panorama, axis=2))
+    range_x = np.where(np.sum(panorama_map, axis=0) > 0)[0]
+
+    # leftmost and rightmost x-axis value which is not 0
+    left_x, right_x = range_x[0], range_x[-1]
+
+    # the relavent top and bottom y-axis value on leftmost x value
+    left_coordinate_y = np.where(panorama_map[:, left_x] > 0)[0]
+    left_bottom_point = [left_x, left_coordinate_y[-1]]
+    left_top_point = [left_x, left_coordinate_y[0]]
+
+    # the relavent top and bottom y-axis value on rightmost x value
+    right_coordinate_y = np.where(panorama_map[:, right_x] > 0)[0]
+    right_bottom_point = [right_x, right_coordinate_y[-1]]
+    right_top_point = [right_x, right_coordinate_y[0]]
+
+    # perspective warping
+    input_points = np.array(
+        [left_top_point, right_top_point, left_bottom_point, right_bottom_point],
+        dtype=np.float32,
+    )
+
+    output_points = np.array(
+        [[0, 0], [w, 0], [0, h], [w, h]],
+        dtype=np.float32,
+    )
+
+    perspective_transform = cv2.getPerspectiveTransform(input_points, output_points)
+    panorama = cv2.warpPerspective(panorama, perspective_transform, (w, h))
+
+    return panorama

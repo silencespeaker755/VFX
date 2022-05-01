@@ -6,9 +6,14 @@ import cv2
 
 from imageIO import read_images
 from utils import cylindrical_warping
-from Feature.harris_detector import HarrisDetector
+from Feature.harris_detector import detect_feature_point
 from Feature.MOPSdescription import get_feature_descriptor
 from Feature.SSDfeature_matcher import detect_simple_features_matching
+
+from ransac import find_translation_matrix
+from image_blending import aggregate_translation
+from image_blending import image_blending
+from utils import bundle_adjustment
 
 
 def draw_feature_point(image, feature):
@@ -32,8 +37,8 @@ def draw_match_point(image, feature, match):
     for idx, m in enumerate(match):
         cnt = 0
         for i in m:
-            center1 = feature[idx][i.queryIdx]["pt"]
-            center2 = feature[(idx + 1) % n][i.trainIdx]["pt"]
+            center1 = feature[idx][i["queryIdx"]]["pt"]
+            center2 = feature[(idx + 1) % n][i["targetIdx"]]["pt"]
 
             cv2.circle(
                 image[idx], (int(center1[0]), int(center1[1])), 4, (0, 0, 255), 5
@@ -84,23 +89,16 @@ if __name__ == "__main__":
 
     # get the image data and the average of their focal length
     images, focal_len = read_images(args.input_dir, args.focal_file)
-    images = images[1:3]
 
+    print("-----------Cylinder Warping------------")
     # cylinder warping
-    # images = [cylindrical_warping(image=img, focal_len=focal_len) for img in images]
+    images = np.array(
+        [cylindrical_warping(image=img, focal_len=focal_len) for img in images]
+    )
 
     print("-----------Harris Detection------------")
     # Harris corner detection
-    harris_model = HarrisDetector()
-    features = [harris_model.detect_feature_point(image) for image in images]
-    # features = harris_model.detect_feature_point(images[0])
-    # i = draw_feature_point(images[0], features)
-
-    #############
-    # unit test #
-    #############
-
-    # cv2.imwrite("output.png", i)
+    features = [detect_feature_point(image) for image in images]
 
     images_num = len(images)
 
@@ -114,9 +112,35 @@ if __name__ == "__main__":
     # SSD feature matching
     matches = [
         detect_simple_features_matching(
-            descriptor1=descriptors[i], descriptor2=descriptors[(i + 1) % images_num]
+            descriptor1=descriptors[i],
+            descriptor2=descriptors[(i + 1) % images_num],
         )
         for i in range(images_num)
     ]
 
-    draw_match_point(images, features, matches)
+    # draw_match_point(images, features, matches)
+
+    print("-----------Image Matching------------")
+    # calculate translation between each image
+    translations = [
+        find_translation_matrix(
+            feature1=features[i],
+            feature2=features[(i + 1) % images_num],
+            matches=matches[i],
+        )
+        for i in range(images_num - 1)
+    ]
+    translations = [np.zeros(2, dtype=np.float64)] + translations
+
+    print("-----------Image Blending------------")
+    # image blending
+    panorama = image_blending(images=images, translations=translations)
+
+    print("-----------Bundle Adjustment------------")
+    panorama = bundle_adjustment(panorama=panorama)
+
+    #############
+    # unit test #
+    #############
+
+    cv2.imwrite(f"output.png", panorama.astype(np.uint8))

@@ -28,7 +28,7 @@ def read_images(image_dir, focal_file):
     print(f"{path} -> focal length: {focal_len}")
 
     # transform images into np array
-    # images = np.array(images)
+    images = np.array(images)
 
     return images, focal_len
 
