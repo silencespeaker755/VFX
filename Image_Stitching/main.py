@@ -3,7 +3,7 @@ import argparse
 import os, sys
 import cv2
 
-from imageIO import read_images, save_panorama_images
+from imageIO import read_images, save_panorama_images, draw_match_point
 from utils import cylindrical_warping
 from Feature.harris_detector import detect_feature_point
 from Feature.MOPSdescription import get_feature_descriptor
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # get the image data
-    images, focal_len = read_images(args.input_dir, args.focal_file)
+    images = read_images(args.input_dir)
     images = images[::-1] if args.reverse else images
     # get focal length
     focal_len = float(args.focal_len)
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         )
         for i in range(images_num)
     ]
-
+    draw_match_point(images, features, matches)
     print("-----------Image Matching------------")
     # calculate translation between each image
     translations = [

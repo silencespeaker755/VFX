@@ -46,6 +46,4 @@ def find_translation_matrix(
     A = np.array([unit] * max_inlier_num).reshape(max_inlier_num * 2, 2)
     translation = np.linalg.lstsq(A, B, rcond=None)[0]
 
-    print(translation)
-
     return translation
