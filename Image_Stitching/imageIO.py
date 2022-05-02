@@ -9,10 +9,12 @@ def read_images(image_dir, focal_file):
     files = os.listdir(image_dir)
     files.sort()
 
+    extensions = {".jpg", ".JPG", ".png", ".PNG"}
     paths = [
         os.path.join(image_dir, file)
         for file in files
         if os.path.isfile(os.path.join(image_dir, file))
+        and any(file.endswith(extension) for extension in extensions)
     ]
     images = []
     focal_len = None
@@ -25,7 +27,7 @@ def read_images(image_dir, focal_file):
 
     # get focal length
     focal_len = get_focal_len(focal_file)
-    print(f"{path} -> focal length: {focal_len}")
+    print(f"focal length: {focal_len}")
 
     # transform images into np array
     images = np.array(images)

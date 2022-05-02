@@ -15,86 +15,26 @@ from image_blending import aggregate_translation
 from image_blending import image_blending
 from utils import bundle_adjustment
 
-
-def draw_feature_point(image, feature):
-    for idx, m in enumerate(feature):
-        center1, center2 = feature[idx]["pt"]
-        cv2.circle(image, (int(center1), int(center2)), 7, (0, 0, 255), 10)
-
-    return image
-
-
-def draw_match_point(image, feature, match):
-    n = len(image)
-    color = [
-        (
-            np.random.randint(0, 255),
-            np.random.randint(0, 255),
-            np.random.randint(0, 255),
-        )
-        for _ in range(500)
-    ]
-    for idx, m in enumerate(match):
-        cnt = 0
-        for i in m:
-            center1 = feature[idx][i["queryIdx"]]["pt"]
-            center2 = feature[(idx + 1) % n][i["targetIdx"]]["pt"]
-
-            cv2.circle(
-                image[idx], (int(center1[0]), int(center1[1])), 4, (0, 0, 255), 5
-            )
-            cv2.circle(
-                image[(idx + 1) % n],
-                (int(center2[0]), int(center2[1])),
-                4,
-                (0, 0, 255),
-                5,
-            )
-
-            cv2.putText(
-                image[idx],
-                str(cnt),
-                (int(center1[0]), int(center1[1])),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.35,
-                color[idx],
-                1,
-                cv2.LINE_AA,
-            )
-            cv2.putText(
-                image[(idx + 1) % n],
-                str(cnt),
-                (int(center2[0]), int(center2[1])),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.35,
-                color[idx],
-                1,
-                cv2.LINE_AA,
-            )
-
-            cnt += 1
-        break
-
-    os.mkdir("outputs-test")
-    for i in range(n):
-        cv2.imwrite(f"outputs-test/output-match-{i}.png", image[i])
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input_dir", default="Photos")
     parser.add_argument("-f", "--focal_file", default="focal_length.txt")
-    parser.add_argument("-o", "--output")
+    parser.add_argument("--reverse", action="store_false")
+    parser.add_argument("-o", "--output", default="output.png")
     args = parser.parse_args()
 
     # get the image data and the average of their focal length
     images, focal_len = read_images(args.input_dir, args.focal_file)
+    images = images[:2]
+    print(args.reverse)
 
     print("-----------Cylinder Warping------------")
     # cylinder warping
     images = np.array(
         [cylindrical_warping(image=img, focal_len=focal_len) for img in images]
     )
+
+    cv2.imwrite(f"output1.png", images[0].astype(np.uint8))
 
     print("-----------Harris Detection------------")
     # Harris corner detection
@@ -118,8 +58,6 @@ if __name__ == "__main__":
         for i in range(images_num)
     ]
 
-    # draw_match_point(images, features, matches)
-
     print("-----------Image Matching------------")
     # calculate translation between each image
     translations = [
@@ -127,6 +65,7 @@ if __name__ == "__main__":
             feature1=features[i],
             feature2=features[(i + 1) % images_num],
             matches=matches[i],
+            reverse=args.reverse,
         )
         for i in range(images_num - 1)
     ]
@@ -143,4 +82,4 @@ if __name__ == "__main__":
     # unit test #
     #############
 
-    cv2.imwrite(f"output.png", panorama.astype(np.uint8))
+    cv2.imwrite(args.output, panorama.astype(np.uint8))
