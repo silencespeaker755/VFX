@@ -11,7 +11,6 @@ from Feature.MOPSdescription import get_feature_descriptor
 from Feature.SSDfeature_matcher import detect_simple_features_matching
 
 from ransac import find_translation_matrix
-from image_blending import aggregate_translation
 from image_blending import image_blending
 from utils import bundle_adjustment
 
@@ -19,13 +18,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input_dir", default="Photos")
     parser.add_argument("-f", "--focal_file", default="focal_length.txt")
+    parser.add_argument("-m", "--minimum_score_ratio", default=0.005)
+    parser.add_argument("-t", "--threshold", default=0.95)
     parser.add_argument("--reverse", action="store_false")
     parser.add_argument("-o", "--output", default="output.png")
     args = parser.parse_args()
 
     # get the image data and the average of their focal length
     images, focal_len = read_images(args.input_dir, args.focal_file)
-    images = images[:2]
+    images = images[::-1]
     print(args.reverse)
 
     print("-----------Cylinder Warping------------")
@@ -38,7 +39,10 @@ if __name__ == "__main__":
 
     print("-----------Harris Detection------------")
     # Harris corner detection
-    features = [detect_feature_point(image) for image in images]
+    features = [
+        detect_feature_point(image, score_ratio=float(args.minimum_score_ratio))
+        for image in images
+    ]
 
     images_num = len(images)
 
@@ -54,6 +58,7 @@ if __name__ == "__main__":
         detect_simple_features_matching(
             descriptor1=descriptors[i],
             descriptor2=descriptors[(i + 1) % images_num],
+            threshold=float(args.threshold),
         )
         for i in range(images_num)
     ]

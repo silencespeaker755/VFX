@@ -3,12 +3,10 @@ import cv2
 from scipy.spatial import distance
 
 
-def detect_simple_features_matching(descriptor1, descriptor2):
+def detect_simple_features_matching(descriptor1, descriptor2, threshold):
     # calculate distance
     distances = distance.cdist(descriptor1, descriptor2, "euclidean")
     matches = []
-
-    threshold = 0.95
 
     for index, ssd in enumerate(distances):
         sorted_indexes = np.argsort(ssd)

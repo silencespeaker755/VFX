@@ -4,7 +4,7 @@ import numpy as np
 
 
 def find_translation_matrix(
-    feature1, feature2, matches, size=1, iterations=10000, tolerence=10, reverse=True
+    feature1, feature2, matches, size=1, iterations=20000, tolerence=10, reverse=True
 ):
     feature1_coordinates = np.array(
         [feature1[match["queryIdx"]]["pt"] for match in matches]
@@ -47,6 +47,7 @@ def find_translation_matrix(
     )
     A = np.array([unit] * max_inlier_num).reshape(max_inlier_num * 2, 2)
     translation = np.linalg.lstsq(A, B, rcond=None)[0]
+
     print(translation)
 
     return translation

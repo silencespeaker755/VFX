@@ -8,7 +8,6 @@ def read_images(image_dir, focal_file):
     # get the file list in directory
     files = os.listdir(image_dir)
     files.sort()
-
     extensions = {".jpg", ".JPG", ".png", ".PNG"}
     paths = [
         os.path.join(image_dir, file)

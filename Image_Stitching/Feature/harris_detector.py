@@ -6,7 +6,7 @@ import cv2
 from scipy import ndimage
 
 
-def detect_feature_point(image):
+def detect_feature_point(image, score_ratio):
     # transform to gray color for detection
     # image_gray = cv2.cvtColor(image.astype(np.float32), cv2.COLOR_BGR2GRAY)
     image = cv2.cvtColor(image.astype(np.float32), cv2.COLOR_BGR2GRAY)
@@ -31,7 +31,7 @@ def detect_feature_point(image):
     trace = np.array(Sx_2 + Sy_2)
     score = det - 0.04 * (trace**2)
 
-    local_maximum = find_local_maximum(score, 0.01)
+    local_maximum = find_local_maximum(score, score_ratio)
 
     feature_indexlist = np.transpose(np.where(local_maximum))
     feature_element = {"pt": [], "value": 0}

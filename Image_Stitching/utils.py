@@ -7,8 +7,8 @@ def cylindrical_warping(image, focal_len):
 
     # how could it be
     # focal_len = 704.916
-    focal_len = 6000
-    # focal_len = 480
+    # focal_len = 768
+    focal_len = 745
 
     intrinsics = [[focal_len, 0, w / 2], [0, focal_len, h / 2], [0, 0, 1]]
     # get inverse of intrinsic matrix
