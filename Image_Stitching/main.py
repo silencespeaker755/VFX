@@ -1,10 +1,9 @@
-from matplotlib import image
 import numpy as np
 import argparse
 import os, sys
 import cv2
 
-from imageIO import read_images
+from imageIO import read_images, save_panorama_images
 from utils import cylindrical_warping
 from Feature.harris_detector import detect_feature_point
 from Feature.MOPSdescription import get_feature_descriptor
@@ -17,17 +16,18 @@ from utils import bundle_adjustment
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input_dir", default="Photos")
-    parser.add_argument("-f", "--focal_file", default="focal_length.txt")
+    parser.add_argument("-f", "--focal_len", default=704.916)
     parser.add_argument("-m", "--minimum_score_ratio", default=0.005)
     parser.add_argument("-t", "--threshold", default=0.95)
     parser.add_argument("--reverse", action="store_false")
     parser.add_argument("-o", "--output", default="output.png")
     args = parser.parse_args()
 
-    # get the image data and the average of their focal length
+    # get the image data
     images, focal_len = read_images(args.input_dir, args.focal_file)
-    images = images[::-1]
-    print(args.reverse)
+    images = images[::-1] if args.reverse else images
+    # get focal length
+    focal_len = float(args.focal_len)
 
     print("-----------Cylinder Warping------------")
     # cylinder warping
@@ -70,7 +70,6 @@ if __name__ == "__main__":
             feature1=features[i],
             feature2=features[(i + 1) % images_num],
             matches=matches[i],
-            reverse=args.reverse,
         )
         for i in range(images_num - 1)
     ]
@@ -87,4 +86,4 @@ if __name__ == "__main__":
     # unit test #
     #############
 
-    cv2.imwrite(args.output, panorama.astype(np.uint8))
+    save_panorama_images(image=panorama, output=args.output)

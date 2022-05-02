@@ -1,6 +1,3 @@
-from operator import index
-from pyexpat import features
-from threading import local
 import numpy as np
 import cv2
 from scipy import ndimage
